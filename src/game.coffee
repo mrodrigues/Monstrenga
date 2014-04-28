@@ -17,7 +17,7 @@ window.addEventListener "load", ->
 
   # And turn on default input controls and touch input (for UI)
   Q = window.Q = Quintus().include("Sprites, Scenes, Input, 2D, Anim, Touch, UI").setup(maximize: true).controls(true).touch()
-  Q.debug = true
+  #Q.debug = true
 
   # ## Player Sprite
   # The very basic player sprite, this is just a normal sprite
@@ -32,7 +32,7 @@ window.addEventListener "load", ->
         sheet: "player" # Setting a sprite sheet sets sprite width and height
         x: 410 # You can also set additional properties that can
         y: 90 # be overridden on object creation
-
+        life: 1
 
       # Add in pre-made components to get up and running quickly
       # The `2d` component adds in default 2d collision detection
@@ -53,13 +53,26 @@ window.addEventListener "load", ->
             label: "You Won!"
 
           @destroy()
-        return
-
-      return
 
     step: (dt) ->
       if Q.debug
         Q.stageScene('hud', 3, @p)
+    draw: (ctx) ->
+      @_super(ctx)
+      if Q.debug
+        ctx.fillStyle = "red"
+        ctx.fillRect(- 20, 20, 5, 5)
+    die: ->
+      Q.clearStages()
+      Q.stageScene "level1"
+    updateHud: ->
+      Q.stageScene('hud', 3, @p)
+    loseLife: ->
+      if @p.life == 0
+        @die()
+      else
+        @p.life -= 1
+        @updateHud()
 
   # ## Tower Sprite
   # Sprites can be simple, the Tower sprite just sets a custom sprite sheet
@@ -89,11 +102,25 @@ window.addEventListener "load", ->
           0
         y_range = -@owner.p.h / 2
         ctx.fillRect(x_range, y_range - 50, @p.w, @p.h)
+
+  Q.component "fearOfHeight",
+    added: ->
+      @entity.on "step", this, "step"
+    step: (dt) ->
+      y_offset = 20
+      x_offset = 10
+      x_offset *= switch @entity.direction()
+        when "left" then -1
+        when "right" then 1
+      unless Q.stage().locate(@entity.p.x + x_offset, @entity.p.y + y_offset, Q.SPRITE_ALL)
+        @entity.p.vx *= -1
+
   # ## Enemy Sprite
   # Create the Enemy class to add in some baddies
   Q.Sprite.extend "Enemy",
     WALKING: 0
     DEAD: 1
+    PANIC: 2
 
     init: (p) ->
       @_super p,
@@ -105,7 +132,7 @@ window.addEventListener "load", ->
 
       # Enemies use the Bounce AI to change direction 
       # whenver they run into something.
-      @add "2d, aiBounce"
+      @add "2d, aiBounce, fearOfHeight"
       return
 
     direction: ->
@@ -126,20 +153,39 @@ window.addEventListener "load", ->
           if Q.overlap(@range, Q.player)
             @panic()
         when @DEAD
-          @del("aiBounce")
           @p.vx = 0
           @p.angle = 90
 
     panic: ->
-      @state = @DEAD
+      @state = @PANIC
+      @p.vx *= -2
+      @del("fearOfHeight")
+
+    die: ->
+      Q.player.loseLife()
+      @destroy()
+
+  Q.Sprite.extend "Trap",
+    init: (p) ->
+      @_super p,
+        w: 20
+        h: 20
+      @on "hit.sprite", (collision) ->
+        collision.obj.die()
 
   Q.scene "hud", (stage) ->
     container = stage.insert(new Q.UI.Container(
       x: 50
       y: 0
     ))
+    container.insert(new Q.UI.Text(
+      x: 600
+      y: 20
+      label: "Life: #{Q.player.p.life}"
+      color: "black"
+    ))
     if Q.debug
-      label = container.insert(new Q.UI.Text(
+      container.insert(new Q.UI.Text(
         x: 200
         y: 20
         label: "x: #{Q.player.p.x}, y: #{Q.player.p.y}"
@@ -179,6 +225,18 @@ window.addEventListener "load", ->
     )
 
     stage.insert enemy1
+
+    stage.insert new Q.Enemy(
+      x: 625
+      y: 81
+    )
+
+    window.trap1 = new Q.Trap(
+      x: 882
+      y: 209
+    )
+    stage.insert trap1
+    Q.stageScene('hud', 3, Q.player.p)
 
   # To display a game over / game won popup box, 
   # create a endGame scene that takes in a `label` option
@@ -232,10 +290,6 @@ window.addEventListener "load", ->
 
     # Finally, call stageScene to run the game
     Q.stageScene "level1"
-    return
-
-  return
-
 
 # ## Possible Experimentations:
 # 

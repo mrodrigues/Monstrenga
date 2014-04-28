@@ -5,27 +5,49 @@ window.addEventListener("load", function() {
   Q = window.Q = Quintus().include("Sprites, Scenes, Input, 2D, Anim, Touch, UI").setup({
     maximize: true
   }).controls(true).touch();
-  Q.debug = true;
   Q.Sprite.extend("Player", {
     init: function(p) {
       this._super(p, {
         sheet: "player",
         x: 410,
-        y: 90
+        y: 90,
+        life: 1
       });
       this.add("2d, platformerControls");
-      this.on("hit.sprite", function(collision) {
+      return this.on("hit.sprite", function(collision) {
         if (collision.obj.isA("Tower")) {
           Q.stageScene("endGame", 1, {
             label: "You Won!"
           });
-          this.destroy();
+          return this.destroy();
         }
       });
     },
     step: function(dt) {
       if (Q.debug) {
         return Q.stageScene('hud', 3, this.p);
+      }
+    },
+    draw: function(ctx) {
+      this._super(ctx);
+      if (Q.debug) {
+        ctx.fillStyle = "red";
+        return ctx.fillRect(-20, 20, 5, 5);
+      }
+    },
+    die: function() {
+      Q.clearStages();
+      return Q.stageScene("level1");
+    },
+    updateHud: function() {
+      return Q.stageScene('hud', 3, this.p);
+    },
+    loseLife: function() {
+      if (this.p.life === 0) {
+        return this.die();
+      } else {
+        this.p.life -= 1;
+        return this.updateHud();
       }
     }
   });
@@ -49,9 +71,31 @@ window.addEventListener("load", function() {
       }
     }
   });
+  Q.component("fearOfHeight", {
+    added: function() {
+      return this.entity.on("step", this, "step");
+    },
+    step: function(dt) {
+      var x_offset, y_offset;
+      y_offset = 20;
+      x_offset = 10;
+      x_offset *= (function() {
+        switch (this.entity.direction()) {
+          case "left":
+            return -1;
+          case "right":
+            return 1;
+        }
+      }).call(this);
+      if (!Q.stage().locate(this.entity.p.x + x_offset, this.entity.p.y + y_offset, Q.SPRITE_ALL)) {
+        return this.entity.p.vx *= -1;
+      }
+    }
+  });
   Q.Sprite.extend("Enemy", {
     WALKING: 0,
     DEAD: 1,
+    PANIC: 2,
     init: function(p) {
       this._super(p, {
         sheet: "enemy",
@@ -63,7 +107,7 @@ window.addEventListener("load", function() {
         h: 20,
         owner: this
       });
-      this.add("2d, aiBounce");
+      this.add("2d, aiBounce, fearOfHeight");
     },
     direction: function() {
       if (this.p.vx < 0) {
@@ -85,23 +129,45 @@ window.addEventListener("load", function() {
           }
           break;
         case this.DEAD:
-          this.del("aiBounce");
           this.p.vx = 0;
           return this.p.angle = 90;
       }
     },
     panic: function() {
-      return this.state = this.DEAD;
+      this.state = this.PANIC;
+      this.p.vx *= -2;
+      return this.del("fearOfHeight");
+    },
+    die: function() {
+      Q.player.loseLife();
+      return this.destroy();
+    }
+  });
+  Q.Sprite.extend("Trap", {
+    init: function(p) {
+      this._super(p, {
+        w: 20,
+        h: 20
+      });
+      return this.on("hit.sprite", function(collision) {
+        return collision.obj.die();
+      });
     }
   });
   Q.scene("hud", function(stage) {
-    var container, label;
+    var container;
     container = stage.insert(new Q.UI.Container({
       x: 50,
       y: 0
     }));
+    container.insert(new Q.UI.Text({
+      x: 600,
+      y: 20,
+      label: "Life: " + Q.player.p.life,
+      color: "black"
+    }));
     if (Q.debug) {
-      label = container.insert(new Q.UI.Text({
+      container.insert(new Q.UI.Text({
         x: 200,
         y: 20,
         label: "x: " + Q.player.p.x + ", y: " + Q.player.p.y,
@@ -126,7 +192,17 @@ window.addEventListener("load", function() {
       x: 818,
       y: 81
     });
-    return stage.insert(enemy1);
+    stage.insert(enemy1);
+    stage.insert(new Q.Enemy({
+      x: 625,
+      y: 81
+    }));
+    window.trap1 = new Q.Trap({
+      x: 882,
+      y: 209
+    });
+    stage.insert(trap1);
+    return Q.stageScene('hud', 3, Q.player.p);
   });
   Q.scene("endGame", function(stage) {
     var button, container, label;
@@ -152,12 +228,12 @@ window.addEventListener("load", function() {
     });
     container.fit(20);
   });
-  Q.load("sprites.png, sprites.json, level.json, tiles.png, background-wall.png", function() {
+  return Q.load("sprites.png, sprites.json, level.json, tiles.png, background-wall.png", function() {
     Q.sheet("tiles", "tiles.png", {
       tilew: 32,
       tileh: 32
     });
     Q.compileSheets("sprites.png", "sprites.json");
-    Q.stageScene("level1");
+    return Q.stageScene("level1");
   });
 });
