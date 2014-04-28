@@ -22,6 +22,11 @@ window.addEventListener("load", function() {
           this.destroy();
         }
       });
+    },
+    step: function(dt) {
+      if (Q.debug) {
+        return Q.stageScene('hud', 3, this.p);
+      }
     }
   });
   Q.Sprite.extend("Range", {
@@ -89,6 +94,22 @@ window.addEventListener("load", function() {
       return this.state = this.DEAD;
     }
   });
+  Q.scene("hud", function(stage) {
+    var container, label;
+    container = stage.insert(new Q.UI.Container({
+      x: 50,
+      y: 0
+    }));
+    if (Q.debug) {
+      label = container.insert(new Q.UI.Text({
+        x: 200,
+        y: 20,
+        label: "x: " + Q.player.p.x + ", y: " + Q.player.p.y,
+        color: "red"
+      }));
+    }
+    container.fit(20);
+  });
   Q.scene("level1", function(stage) {
     stage.insert(new Q.Repeater({
       asset: "background-wall.png",
@@ -102,14 +123,10 @@ window.addEventListener("load", function() {
     Q.player = stage.insert(new Q.Player());
     stage.add("viewport").follow(Q.player);
     window.enemy1 = new Q.Enemy({
-      x: 700,
-      y: 0
+      x: 818,
+      y: 81
     });
-    stage.insert(enemy1);
-    return stage.insert(new Q.Enemy({
-      x: 800,
-      y: 0
-    }));
+    return stage.insert(enemy1);
   });
   Q.scene("endGame", function(stage) {
     var button, container, label;

@@ -57,6 +57,9 @@ window.addEventListener "load", ->
 
       return
 
+    step: (dt) ->
+      if Q.debug
+        Q.stageScene('hud', 3, @p)
 
   # ## Tower Sprite
   # Sprites can be simple, the Tower sprite just sets a custom sprite sheet
@@ -130,6 +133,21 @@ window.addEventListener "load", ->
     panic: ->
       @state = @DEAD
 
+  Q.scene "hud", (stage) ->
+    container = stage.insert(new Q.UI.Container(
+      x: 50
+      y: 0
+    ))
+    if Q.debug
+      label = container.insert(new Q.UI.Text(
+        x: 200
+        y: 20
+        label: "x: #{Q.player.p.x}, y: #{Q.player.p.y}"
+        color: "red"
+      ))
+    container.fit 20
+    return
+
   # ## Level1 scene
   # Create a new scene called level 1
   Q.scene "level1", (stage) ->
@@ -156,16 +174,11 @@ window.addEventListener "load", ->
 
     # Add in a couple of enemies
     window.enemy1 = new Q.Enemy(
-      x: 700
-      y: 0
+      x: 818
+      y: 81
     )
 
     stage.insert enemy1
-
-    stage.insert new Q.Enemy(
-      x: 800
-      y: 0
-    )
 
   # To display a game over / game won popup box, 
   # create a endGame scene that takes in a `label` option
