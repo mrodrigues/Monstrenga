@@ -2,6 +2,7 @@ Credits
 =======
 
 *Design and Concept Art:* Carol Durandet 
+
 *Math, Coding and Sound picking:* Marcos Rodrigues
 (http://mrodrigues.dunked.com/) 
 
