@@ -49,7 +49,8 @@ window.addEventListener("load", function() {
         y: 90,
         life: 1,
         jumpSpeed: -560,
-        gravity: 1.5
+        gravity: 1.5,
+        points: [[-11, 15], [-11, -15], [12, -15], [12, 15]]
       });
       this.add("2d, platformerControls, animation, flippable");
       return this.on("jump");
@@ -173,7 +174,8 @@ window.addEventListener("load", function() {
   Q.Sprite.extend("Trap", {
     init: function(p) {
       this._super(p, {
-        asset: "trap.png"
+        asset: "trap.png",
+        points: [[-16, 16], [-9, -2], [9, -2], [16, 16]]
       });
       return this.on("hit.sprite", function(collision) {
         return collision.obj.die();
@@ -367,6 +369,8 @@ window.addEventListener("load", function() {
       }
     });
     Q.stageScene("level1");
-    return Q.audio.play("bg.mp3");
+    return Q.audio.play("bg.mp3", {
+      loop: true
+    });
   });
 });

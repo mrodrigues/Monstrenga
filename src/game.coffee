@@ -22,7 +22,8 @@ window.addEventListener "load", ->
     controls(true).
     touch().
     enableSound()
-    #Q.debug = true
+
+  #Q.debug = true
 
   # ## Components
   Q.component "fearOfHeight",
@@ -63,6 +64,7 @@ window.addEventListener "load", ->
         life: 1
         jumpSpeed: -560
         gravity: 1.5
+        points: [[-11,15],[-11,-15],[12,-15],[12,15]]
 
       # Add in pre-made components to get up and running quickly
       # The `2d` component adds in default 2d collision detection
@@ -185,6 +187,7 @@ window.addEventListener "load", ->
     init: (p) ->
       @_super p,
         asset: "trap.png"
+        points: [[-16,16],[-9,-2],[9,-2],[16,16]]
       @on "hit.sprite", (collision) ->
         collision.obj.die()
 
@@ -400,7 +403,7 @@ window.addEventListener "load", ->
 
     # Finally, call stageScene to run the game
     Q.stageScene "level1"
-    Q.audio.play("bg.mp3")
+    Q.audio.play "bg.mp3", loop: true
 
 # ## Possible Experimentations:
 # 
