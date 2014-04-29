@@ -2,9 +2,12 @@
 
 window.addEventListener("load", function() {
   var Q;
-  Q = window.Q = Quintus().include("Sprites, Scenes, Input, 2D, Anim, Touch, UI").setup({
+  Q = window.Q = Quintus({
+    audioSupported: ['wav', 'mp3', 'ogg']
+  }).include("Audio, Sprites, Scenes, Input, 2D, Anim, Touch, UI").setup({
     maximize: true
-  }).controls(true).touch();
+  }).controls(true).touch().enableSound();
+  Q.debug = true;
   Q.component("fearOfHeight", {
     added: function() {
       return this.entity.on("step", this, "step");
@@ -50,16 +53,12 @@ window.addEventListener("load", function() {
         gravity: 1.5
       });
       this.add("2d, platformerControls, animation, flippable");
-      return this.on("hit.sprite", function(collision) {
-        if (collision.obj.isA("Tower")) {
-          Q.stageScene("endGame", 1, {
-            label: "You Won!"
-          });
-          return this.destroy();
-        }
-      });
+      return this.on("jump");
     },
     step: function(dt) {
+      if (this.p.landed > 0) {
+        this.p.playedJump = false;
+      }
       if (Q.debug) {
         return Q.stageScene('hud', 3, this.p);
       }
@@ -76,6 +75,15 @@ window.addEventListener("load", function() {
         Q.clearStages();
         return Q.stageScene("level1");
       }
+    },
+    jump: function() {
+      if (!this.p.playedJump) {
+        Q.audio.play('jump.mp3');
+        return this.p.playedJump = true;
+      }
+    },
+    jumped: function(obj) {
+      return obj.p.playedJump = false;
     },
     updateHud: function() {
       return Q.stageScene('hud', 3, this.p);
@@ -321,7 +329,7 @@ window.addEventListener("load", function() {
     });
     container.fit(20);
   });
-  return Q.load("player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png", function() {
+  return Q.load("player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png, jump.mp3", function() {
     Q.sheet("tiles", "tiles.png", {
       tilew: 32,
       tileh: 32

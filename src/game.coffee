@@ -16,8 +16,13 @@ window.addEventListener "load", ->
   # Maximize this game to whatever the size of the browser is
 
   # And turn on default input controls and touch input (for UI)
-  Q = window.Q = Quintus().include("Sprites, Scenes, Input, 2D, Anim, Touch, UI").setup(maximize: true).controls(true).touch()
-  #Q.debug = true
+  Q = window.Q = Quintus({audioSupported: [ 'wav','mp3','ogg' ]}).
+    include("Audio, Sprites, Scenes, Input, 2D, Anim, Touch, UI").
+    setup(maximize: true).
+    controls(true).
+    touch().
+    enableSound()
+  Q.debug = true
 
   # ## Components
   Q.component "fearOfHeight",
@@ -67,19 +72,11 @@ window.addEventListener "load", ->
       # It also checks to make sure the player is on a horizontal surface before
       # letting them jump.
       @add "2d, platformerControls, animation, flippable"
-
-      # Write event handlers to respond hook into behaviors.
-      # hit.sprite is called everytime the player collides with a sprite
-      @on "hit.sprite", (collision) ->
-
-        # Check the collision, if it's the Tower, you win!
-        if collision.obj.isA("Tower")
-          Q.stageScene "endGame", 1,
-            label: "You Won!"
-
-          @destroy()
+      @on("jump")
 
     step: (dt) ->
+      if @p.landed > 0
+        @p.playedJump = false
       if Q.debug
         Q.stageScene('hud', 3, @p)
     draw: (ctx) ->
@@ -91,6 +88,12 @@ window.addEventListener "load", ->
       unless Q.debug
         Q.clearStages()
         Q.stageScene "level1"
+    jump: ->
+      if !@p.playedJump
+        Q.audio.play('jump.mp3')
+        @p.playedJump = true
+    jumped: (obj) ->
+      obj.p.playedJump = false
     updateHud: ->
       Q.stageScene('hud', 3, @p)
     loseLife: ->
@@ -371,7 +374,7 @@ window.addEventListener "load", ->
   # Q.load can be called at any time to load additional assets
   # assets that are already loaded will be skipped
   # The callback will be triggered when everything is loaded
-  Q.load "player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png", ->
+  Q.load "player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png, jump.mp3", ->
 
     # Sprites sheets can be created manually
     Q.sheet "tiles", "tiles.png",

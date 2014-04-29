@@ -3983,12 +3983,14 @@ Quintus.Input = function(Q) {
           p.vy = p.jumpSpeed;
           p.landed = -dt;
           p.jumping = true;
+          this.entity.trigger('jump', this.entity);
         } else if(Q.inputs['up'] || Q.inputs['action']) {
           p.jumping = true;
         }
         
         if(p.jumping && !(Q.inputs['up'] || Q.inputs['action'])) {
           p.jumping = false;
+          this.entity.trigger('jumped', this.entity);
           if(p.vy < p.jumpSpeed / 3) {
             p.vy = p.jumpSpeed / 3;
           }
