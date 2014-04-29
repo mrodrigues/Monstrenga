@@ -22,7 +22,7 @@ window.addEventListener "load", ->
     controls(true).
     touch().
     enableSound()
-  Q.debug = true
+    #Q.debug = true
 
   # ## Components
   Q.component "fearOfHeight",
@@ -86,6 +86,7 @@ window.addEventListener "load", ->
         ctx.fillRect(- 20, 20, 5, 5)
     die: ->
       unless Q.debug
+        Q.audio.play('die.mp3')
         Q.clearStages()
         Q.stageScene "level1"
     jump: ->
@@ -170,11 +171,13 @@ window.addEventListener "load", ->
           @p.angle = 90
 
     panic: ->
+      Q.audio.play('scream.mp3')
       @state = @PANIC
       @p.vx *= -@p.runningFactor
       @del("fearOfHeight")
 
     die: ->
+      Q.audio.play('die.mp3')
       Q.player.loseLife()
       @destroy()
 
@@ -374,7 +377,7 @@ window.addEventListener "load", ->
   # Q.load can be called at any time to load additional assets
   # assets that are already loaded will be skipped
   # The callback will be triggered when everything is loaded
-  Q.load "player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png, jump.mp3", ->
+  Q.load "player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png, jump.mp3, scream.mp3, die.mp3", ->
 
     # Sprites sheets can be created manually
     Q.sheet "tiles", "tiles.png",

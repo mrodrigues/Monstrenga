@@ -7,7 +7,6 @@ window.addEventListener("load", function() {
   }).include("Audio, Sprites, Scenes, Input, 2D, Anim, Touch, UI").setup({
     maximize: true
   }).controls(true).touch().enableSound();
-  Q.debug = true;
   Q.component("fearOfHeight", {
     added: function() {
       return this.entity.on("step", this, "step");
@@ -72,6 +71,7 @@ window.addEventListener("load", function() {
     },
     die: function() {
       if (!Q.debug) {
+        Q.audio.play('die.mp3');
         Q.clearStages();
         return Q.stageScene("level1");
       }
@@ -159,11 +159,13 @@ window.addEventListener("load", function() {
       }
     },
     panic: function() {
+      Q.audio.play('scream.mp3');
       this.state = this.PANIC;
       this.p.vx *= -this.p.runningFactor;
       return this.del("fearOfHeight");
     },
     die: function() {
+      Q.audio.play('die.mp3');
       Q.player.loseLife();
       return this.destroy();
     }
@@ -329,7 +331,7 @@ window.addEventListener("load", function() {
     });
     container.fit(20);
   });
-  return Q.load("player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png, jump.mp3", function() {
+  return Q.load("player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png, jump.mp3, scream.mp3, die.mp3", function() {
     Q.sheet("tiles", "tiles.png", {
       tilew: 32,
       tileh: 32
