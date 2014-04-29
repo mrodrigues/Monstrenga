@@ -56,7 +56,8 @@ window.addEventListener "load", ->
         x: 410 # You can also set additional properties that can
         y: 90 # be overridden on object creation
         life: 1
-        jumpSpeed: -450
+        jumpSpeed: -560
+        gravity: 1.5
 
       # Add in pre-made components to get up and running quickly
       # The `2d` component adds in default 2d collision detection
@@ -87,8 +88,9 @@ window.addEventListener "load", ->
         ctx.fillStyle = "red"
         ctx.fillRect(- 20, 20, 5, 5)
     die: ->
-      Q.clearStages()
-      Q.stageScene "level1"
+      unless Q.debug
+        Q.clearStages()
+        Q.stageScene "level1"
     updateHud: ->
       Q.stageScene('hud', 3, @p)
     loseLife: ->
@@ -109,23 +111,15 @@ window.addEventListener "load", ->
 
   Q.Sprite.extend "Range",
     init: (p) ->
-      @_super p
+      @_super p,
+        type: Q.SPRITE_NONE
       @owner = @p.owner
 
     step: (dt) ->
-      @p.x = @owner.p.x
-      @p.y = @owner.p.y
-
-    draw: (ctx)->
-      @_super(ctx)
-      if Q.debug
-        ctx.fillStyle = "red"
-        x_range = if @owner.direction() == "left"
-          -@p.w
-        else
-          0
-        y_range = -@owner.p.h / 2
-        ctx.fillRect(x_range, y_range, @p.w, @p.h)
+      @p.x = @owner.p.x + @p.w / 2
+      if @owner.direction() == "left"
+        @p.x -= @p.w
+      @p.y = @owner.p.y - @owner.p.h / 2
 
   # ## Enemy Sprite
   # Create the Enemy class to add in some baddies
@@ -139,14 +133,16 @@ window.addEventListener "load", ->
         sheet: "human"
         sprite: "human"
         vx: 100
+        runningFactor: 2
 
       @state = @WALKING
-      @range = new Q.Range(w: 100, h: 20, owner: this)
+      @range = new Q.Range(w: 400, h: 20, owner: this)
 
       # Enemies use the Bounce AI to change direction 
       # whenver they run into something.
       @add "2d, aiBounce, fearOfHeight, animation, flippable"
-      return
+
+      @rangeAddedToStage = false
 
     direction: ->
       if @p.vx < 0
@@ -156,10 +152,11 @@ window.addEventListener "load", ->
 
     draw: (ctx) ->
       @_super(ctx)
-      @range.draw(ctx)
 
     step: (dt) ->
-      @range.step(dt)
+      unless @rangeAddedToStage
+        @stage.insert @range
+        @rangeAddedToStage = true
 
       switch @state
         when @WALKING
@@ -171,7 +168,7 @@ window.addEventListener "load", ->
 
     panic: ->
       @state = @PANIC
-      @p.vx *= -2
+      @p.vx *= -@p.runningFactor
       @del("fearOfHeight")
 
     die: ->
@@ -181,10 +178,18 @@ window.addEventListener "load", ->
   Q.Sprite.extend "Trap",
     init: (p) ->
       @_super p,
-        w: 20
-        h: 20
+        asset: "trap.png"
       @on "hit.sprite", (collision) ->
         collision.obj.die()
+
+  Q.Sprite.extend "Door",
+    init: (p) ->
+      @_super p,
+        asset: "door.png"
+      @on "hit.sprite", (collision) ->
+        if collision.obj.isA("Player")
+          Q.stageScene "endGame", 1,
+            label: "You won!"
 
   Q.scene "hud", (stage) ->
     container = stage.insert(new Q.UI.Container(
@@ -205,7 +210,6 @@ window.addEventListener "load", ->
         color: "red"
       ))
     container.fit 20
-    return
 
   # ## Level1 scene
   # Create a new scene called level 1
@@ -225,25 +229,107 @@ window.addEventListener "load", ->
     )
 
     # Create the player and add them to the stage
-    Q.player = stage.insert(new Q.Player(x: 74, y: 1105))
+    Q.player = stage.insert(new Q.Player(x: 74, y: 1521))
 
     # Give the stage a moveable viewport and tell it
     # to follow the player.
     stage.add("viewport").follow Q.player
 
     # Add in a couple of enemies
+
     window.enemy1 = new Q.Enemy(
-      x: 100
-      y: 17
+      x: 140
+      y: 1297
     )
 
     stage.insert enemy1
 
+    stage.insert new Q.Enemy(
+      x: 240
+      y: 1073
+    )
+
+    stage.insert new Q.Enemy(
+      x: 300
+      y: 625
+    )
+
+    stage.insert new Q.Enemy(
+      x: 100
+      y: 337
+    )
+
     window.trap1 = new Q.Trap(
-      x: 882
-      y: 209
+      x: 175
+      y: 689
     )
     stage.insert trap1
+
+    stage.insert new Q.Trap(
+      x: 209
+      y: 689
+    )
+
+    stage.insert new Q.Trap(
+      x: 399
+      y: 689
+    )
+
+    stage.insert new Q.Trap(
+      x: 433
+      y: 689
+    )
+
+    stage.insert new Q.Trap(
+      x: 209
+      y: 1041
+    )
+
+    stage.insert new Q.Trap(
+      x: 241
+      y: 1041
+    )
+
+    stage.insert new Q.Trap(
+      x: 399
+      y: 1201
+    )
+
+    stage.insert new Q.Trap(
+      x: 431
+      y: 1201
+    )
+
+    stage.insert new Q.Trap(
+      x: 431
+      y: 1201
+    )
+
+    stage.insert new Q.Trap(
+      x: 175
+      y: 401
+    )
+
+    stage.insert new Q.Trap(
+      x: 206
+      y: 401
+    )
+
+    stage.insert new Q.Trap(
+      x: 237
+      y: 401
+    )
+
+    stage.insert new Q.Trap(
+      x: 271
+      y: 401
+    )
+
+    window.door = stage.insert new Q.Door(
+      x: 401
+      y: 96
+    )
+
     Q.stageScene('hud', 3, Q.player.p)
 
   # To display a game over / game won popup box, 
@@ -285,13 +371,12 @@ window.addEventListener "load", ->
   # Q.load can be called at any time to load additional assets
   # assets that are already loaded will be skipped
   # The callback will be triggered when everything is loaded
-  Q.load "player.png, player.json, human.png, human.json, level.json, tiles.png, background-wall.png", ->
+  Q.load "player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png", ->
 
     # Sprites sheets can be created manually
     Q.sheet "tiles", "tiles.png",
       tilew: 32
       tileh: 32
-
 
     # Or from a .json asset that defines sprite locations
     Q.compileSheets "player.png", "player.json"

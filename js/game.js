@@ -46,7 +46,8 @@ window.addEventListener("load", function() {
         x: 410,
         y: 90,
         life: 1,
-        jumpSpeed: -450
+        jumpSpeed: -560,
+        gravity: 1.5
       });
       this.add("2d, platformerControls, animation, flippable");
       return this.on("hit.sprite", function(collision) {
@@ -71,8 +72,10 @@ window.addEventListener("load", function() {
       }
     },
     die: function() {
-      Q.clearStages();
-      return Q.stageScene("level1");
+      if (!Q.debug) {
+        Q.clearStages();
+        return Q.stageScene("level1");
+      }
     },
     updateHud: function() {
       return Q.stageScene('hud', 3, this.p);
@@ -88,22 +91,17 @@ window.addEventListener("load", function() {
   });
   Q.Sprite.extend("Range", {
     init: function(p) {
-      this._super(p);
+      this._super(p, {
+        type: Q.SPRITE_NONE
+      });
       return this.owner = this.p.owner;
     },
     step: function(dt) {
-      this.p.x = this.owner.p.x;
-      return this.p.y = this.owner.p.y;
-    },
-    draw: function(ctx) {
-      var x_range, y_range;
-      this._super(ctx);
-      if (Q.debug) {
-        ctx.fillStyle = "red";
-        x_range = this.owner.direction() === "left" ? -this.p.w : 0;
-        y_range = -this.owner.p.h / 2;
-        return ctx.fillRect(x_range, y_range, this.p.w, this.p.h);
+      this.p.x = this.owner.p.x + this.p.w / 2;
+      if (this.owner.direction() === "left") {
+        this.p.x -= this.p.w;
       }
+      return this.p.y = this.owner.p.y - this.owner.p.h / 2;
     }
   });
   Q.Sprite.extend("Enemy", {
@@ -114,15 +112,17 @@ window.addEventListener("load", function() {
       this._super(p, {
         sheet: "human",
         sprite: "human",
-        vx: 100
+        vx: 100,
+        runningFactor: 2
       });
       this.state = this.WALKING;
       this.range = new Q.Range({
-        w: 100,
+        w: 400,
         h: 20,
         owner: this
       });
       this.add("2d, aiBounce, fearOfHeight, animation, flippable");
+      return this.rangeAddedToStage = false;
     },
     direction: function() {
       if (this.p.vx < 0) {
@@ -132,11 +132,13 @@ window.addEventListener("load", function() {
       }
     },
     draw: function(ctx) {
-      this._super(ctx);
-      return this.range.draw(ctx);
+      return this._super(ctx);
     },
     step: function(dt) {
-      this.range.step(dt);
+      if (!this.rangeAddedToStage) {
+        this.stage.insert(this.range);
+        this.rangeAddedToStage = true;
+      }
       switch (this.state) {
         case this.WALKING:
           if (Q.overlap(this.range, Q.player)) {
@@ -150,7 +152,7 @@ window.addEventListener("load", function() {
     },
     panic: function() {
       this.state = this.PANIC;
-      this.p.vx *= -2;
+      this.p.vx *= -this.p.runningFactor;
       return this.del("fearOfHeight");
     },
     die: function() {
@@ -161,11 +163,24 @@ window.addEventListener("load", function() {
   Q.Sprite.extend("Trap", {
     init: function(p) {
       this._super(p, {
-        w: 20,
-        h: 20
+        asset: "trap.png"
       });
       return this.on("hit.sprite", function(collision) {
         return collision.obj.die();
+      });
+    }
+  });
+  Q.Sprite.extend("Door", {
+    init: function(p) {
+      this._super(p, {
+        asset: "door.png"
+      });
+      return this.on("hit.sprite", function(collision) {
+        if (collision.obj.isA("Player")) {
+          return Q.stageScene("endGame", 1, {
+            label: "You won!"
+          });
+        }
       });
     }
   });
@@ -189,7 +204,7 @@ window.addEventListener("load", function() {
         color: "red"
       }));
     }
-    container.fit(20);
+    return container.fit(20);
   });
   Q.scene("level1", function(stage) {
     stage.insert(new Q.Repeater({
@@ -203,19 +218,83 @@ window.addEventListener("load", function() {
     }));
     Q.player = stage.insert(new Q.Player({
       x: 74,
-      y: 1105
+      y: 1521
     }));
     stage.add("viewport").follow(Q.player);
     window.enemy1 = new Q.Enemy({
-      x: 100,
-      y: 17
+      x: 140,
+      y: 1297
     });
     stage.insert(enemy1);
+    stage.insert(new Q.Enemy({
+      x: 240,
+      y: 1073
+    }));
+    stage.insert(new Q.Enemy({
+      x: 300,
+      y: 625
+    }));
+    stage.insert(new Q.Enemy({
+      x: 100,
+      y: 337
+    }));
     window.trap1 = new Q.Trap({
-      x: 882,
-      y: 209
+      x: 175,
+      y: 689
     });
     stage.insert(trap1);
+    stage.insert(new Q.Trap({
+      x: 209,
+      y: 689
+    }));
+    stage.insert(new Q.Trap({
+      x: 399,
+      y: 689
+    }));
+    stage.insert(new Q.Trap({
+      x: 433,
+      y: 689
+    }));
+    stage.insert(new Q.Trap({
+      x: 209,
+      y: 1041
+    }));
+    stage.insert(new Q.Trap({
+      x: 241,
+      y: 1041
+    }));
+    stage.insert(new Q.Trap({
+      x: 399,
+      y: 1201
+    }));
+    stage.insert(new Q.Trap({
+      x: 431,
+      y: 1201
+    }));
+    stage.insert(new Q.Trap({
+      x: 431,
+      y: 1201
+    }));
+    stage.insert(new Q.Trap({
+      x: 175,
+      y: 401
+    }));
+    stage.insert(new Q.Trap({
+      x: 206,
+      y: 401
+    }));
+    stage.insert(new Q.Trap({
+      x: 237,
+      y: 401
+    }));
+    stage.insert(new Q.Trap({
+      x: 271,
+      y: 401
+    }));
+    window.door = stage.insert(new Q.Door({
+      x: 401,
+      y: 96
+    }));
     return Q.stageScene('hud', 3, Q.player.p);
   });
   Q.scene("endGame", function(stage) {
@@ -242,7 +321,7 @@ window.addEventListener("load", function() {
     });
     container.fit(20);
   });
-  return Q.load("player.png, player.json, human.png, human.json, level.json, tiles.png, background-wall.png", function() {
+  return Q.load("player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png", function() {
     Q.sheet("tiles", "tiles.png", {
       tilew: 32,
       tileh: 32
