@@ -19,6 +19,28 @@ window.addEventListener "load", ->
   Q = window.Q = Quintus().include("Sprites, Scenes, Input, 2D, Anim, Touch, UI").setup(maximize: true).controls(true).touch()
   #Q.debug = true
 
+  # ## Components
+  Q.component "fearOfHeight",
+    added: ->
+      @entity.on "step", this, "step"
+    step: (dt) ->
+      y_offset = 20
+      x_offset = 10
+      x_offset *= switch @entity.direction()
+        when "left" then -1
+        when "right" then 1
+      unless Q.stage().locate(@entity.p.x + x_offset, @entity.p.y + y_offset, Q.SPRITE_ALL)
+        @entity.p.vx *= -1
+
+  Q.component "flippable",
+    added: ->
+      @entity.on "step", this, "step"
+    step: (dt) ->
+      if @entity.p.vx > 0
+        @entity.play("walk_right")
+      else if @entity.p.vx < 0
+        @entity.play("walk_left")
+
   # ## Player Sprite
   # The very basic player sprite, this is just a normal sprite
   # using the player sprite sheet with default controls added to it.
@@ -30,9 +52,11 @@ window.addEventListener "load", ->
       # You can call the parent's constructor with this._super(..)
       @_super p,
         sheet: "player" # Setting a sprite sheet sets sprite width and height
+        sprite: "player"
         x: 410 # You can also set additional properties that can
         y: 90 # be overridden on object creation
         life: 1
+        jumpSpeed: -450
 
       # Add in pre-made components to get up and running quickly
       # The `2d` component adds in default 2d collision detection
@@ -41,7 +65,7 @@ window.addEventListener "load", ->
       # default input actions (left, right to move,  up or action to jump)
       # It also checks to make sure the player is on a horizontal surface before
       # letting them jump.
-      @add "2d, platformerControls"
+      @add "2d, platformerControls, animation, flippable"
 
       # Write event handlers to respond hook into behaviors.
       # hit.sprite is called everytime the player collides with a sprite
@@ -90,7 +114,7 @@ window.addEventListener "load", ->
 
     step: (dt) ->
       @p.x = @owner.p.x
-      @p.y = @owner.p.y - 50
+      @p.y = @owner.p.y
 
     draw: (ctx)->
       @_super(ctx)
@@ -101,19 +125,7 @@ window.addEventListener "load", ->
         else
           0
         y_range = -@owner.p.h / 2
-        ctx.fillRect(x_range, y_range - 50, @p.w, @p.h)
-
-  Q.component "fearOfHeight",
-    added: ->
-      @entity.on "step", this, "step"
-    step: (dt) ->
-      y_offset = 20
-      x_offset = 10
-      x_offset *= switch @entity.direction()
-        when "left" then -1
-        when "right" then 1
-      unless Q.stage().locate(@entity.p.x + x_offset, @entity.p.y + y_offset, Q.SPRITE_ALL)
-        @entity.p.vx *= -1
+        ctx.fillRect(x_range, y_range, @p.w, @p.h)
 
   # ## Enemy Sprite
   # Create the Enemy class to add in some baddies
@@ -124,7 +136,8 @@ window.addEventListener "load", ->
 
     init: (p) ->
       @_super p,
-        sheet: "enemy"
+        sheet: "human"
+        sprite: "human"
         vx: 100
 
       @state = @WALKING
@@ -132,7 +145,7 @@ window.addEventListener "load", ->
 
       # Enemies use the Bounce AI to change direction 
       # whenver they run into something.
-      @add "2d, aiBounce, fearOfHeight"
+      @add "2d, aiBounce, fearOfHeight, animation, flippable"
       return
 
     direction: ->
@@ -212,7 +225,7 @@ window.addEventListener "load", ->
     )
 
     # Create the player and add them to the stage
-    Q.player = stage.insert(new Q.Player())
+    Q.player = stage.insert(new Q.Player(x: 74, y: 1105))
 
     # Give the stage a moveable viewport and tell it
     # to follow the player.
@@ -220,16 +233,11 @@ window.addEventListener "load", ->
 
     # Add in a couple of enemies
     window.enemy1 = new Q.Enemy(
-      x: 818
-      y: 81
+      x: 100
+      y: 17
     )
 
     stage.insert enemy1
-
-    stage.insert new Q.Enemy(
-      x: 625
-      y: 81
-    )
 
     window.trap1 = new Q.Trap(
       x: 882
@@ -277,7 +285,7 @@ window.addEventListener "load", ->
   # Q.load can be called at any time to load additional assets
   # assets that are already loaded will be skipped
   # The callback will be triggered when everything is loaded
-  Q.load "sprites.png, sprites.json, level.json, tiles.png, background-wall.png", ->
+  Q.load "player.png, player.json, human.png, human.json, level.json, tiles.png, background-wall.png", ->
 
     # Sprites sheets can be created manually
     Q.sheet "tiles", "tiles.png",
@@ -286,7 +294,18 @@ window.addEventListener "load", ->
 
 
     # Or from a .json asset that defines sprite locations
-    Q.compileSheets "sprites.png", "sprites.json"
+    Q.compileSheets "player.png", "player.json"
+    Q.compileSheets "human.png", "human.json"
+
+    Q.animations("player", {
+      walk_right: { frames: [0], rate: 1/15, flip: false, loop: true },
+      walk_left: { frames:  [0], rate: 1/15, flip:"x", loop: true }
+    })
+
+    Q.animations("human", {
+      walk_right: { frames: [0], rate: 1/15, flip: false, loop: true },
+      walk_left: { frames:  [0], rate: 1/15, flip:"x", loop: true }
+    })
 
     # Finally, call stageScene to run the game
     Q.stageScene "level1"

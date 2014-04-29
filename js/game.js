@@ -5,15 +5,50 @@ window.addEventListener("load", function() {
   Q = window.Q = Quintus().include("Sprites, Scenes, Input, 2D, Anim, Touch, UI").setup({
     maximize: true
   }).controls(true).touch();
+  Q.component("fearOfHeight", {
+    added: function() {
+      return this.entity.on("step", this, "step");
+    },
+    step: function(dt) {
+      var x_offset, y_offset;
+      y_offset = 20;
+      x_offset = 10;
+      x_offset *= (function() {
+        switch (this.entity.direction()) {
+          case "left":
+            return -1;
+          case "right":
+            return 1;
+        }
+      }).call(this);
+      if (!Q.stage().locate(this.entity.p.x + x_offset, this.entity.p.y + y_offset, Q.SPRITE_ALL)) {
+        return this.entity.p.vx *= -1;
+      }
+    }
+  });
+  Q.component("flippable", {
+    added: function() {
+      return this.entity.on("step", this, "step");
+    },
+    step: function(dt) {
+      if (this.entity.p.vx > 0) {
+        return this.entity.play("walk_right");
+      } else if (this.entity.p.vx < 0) {
+        return this.entity.play("walk_left");
+      }
+    }
+  });
   Q.Sprite.extend("Player", {
     init: function(p) {
       this._super(p, {
         sheet: "player",
+        sprite: "player",
         x: 410,
         y: 90,
-        life: 1
+        life: 1,
+        jumpSpeed: -450
       });
-      this.add("2d, platformerControls");
+      this.add("2d, platformerControls, animation, flippable");
       return this.on("hit.sprite", function(collision) {
         if (collision.obj.isA("Tower")) {
           Q.stageScene("endGame", 1, {
@@ -58,7 +93,7 @@ window.addEventListener("load", function() {
     },
     step: function(dt) {
       this.p.x = this.owner.p.x;
-      return this.p.y = this.owner.p.y - 50;
+      return this.p.y = this.owner.p.y;
     },
     draw: function(ctx) {
       var x_range, y_range;
@@ -67,28 +102,7 @@ window.addEventListener("load", function() {
         ctx.fillStyle = "red";
         x_range = this.owner.direction() === "left" ? -this.p.w : 0;
         y_range = -this.owner.p.h / 2;
-        return ctx.fillRect(x_range, y_range - 50, this.p.w, this.p.h);
-      }
-    }
-  });
-  Q.component("fearOfHeight", {
-    added: function() {
-      return this.entity.on("step", this, "step");
-    },
-    step: function(dt) {
-      var x_offset, y_offset;
-      y_offset = 20;
-      x_offset = 10;
-      x_offset *= (function() {
-        switch (this.entity.direction()) {
-          case "left":
-            return -1;
-          case "right":
-            return 1;
-        }
-      }).call(this);
-      if (!Q.stage().locate(this.entity.p.x + x_offset, this.entity.p.y + y_offset, Q.SPRITE_ALL)) {
-        return this.entity.p.vx *= -1;
+        return ctx.fillRect(x_range, y_range, this.p.w, this.p.h);
       }
     }
   });
@@ -98,7 +112,8 @@ window.addEventListener("load", function() {
     PANIC: 2,
     init: function(p) {
       this._super(p, {
-        sheet: "enemy",
+        sheet: "human",
+        sprite: "human",
         vx: 100
       });
       this.state = this.WALKING;
@@ -107,7 +122,7 @@ window.addEventListener("load", function() {
         h: 20,
         owner: this
       });
-      this.add("2d, aiBounce, fearOfHeight");
+      this.add("2d, aiBounce, fearOfHeight, animation, flippable");
     },
     direction: function() {
       if (this.p.vx < 0) {
@@ -186,17 +201,16 @@ window.addEventListener("load", function() {
       dataAsset: "level.json",
       sheet: "tiles"
     }));
-    Q.player = stage.insert(new Q.Player());
+    Q.player = stage.insert(new Q.Player({
+      x: 74,
+      y: 1105
+    }));
     stage.add("viewport").follow(Q.player);
     window.enemy1 = new Q.Enemy({
-      x: 818,
-      y: 81
+      x: 100,
+      y: 17
     });
     stage.insert(enemy1);
-    stage.insert(new Q.Enemy({
-      x: 625,
-      y: 81
-    }));
     window.trap1 = new Q.Trap({
       x: 882,
       y: 209
@@ -228,12 +242,41 @@ window.addEventListener("load", function() {
     });
     container.fit(20);
   });
-  return Q.load("sprites.png, sprites.json, level.json, tiles.png, background-wall.png", function() {
+  return Q.load("player.png, player.json, human.png, human.json, level.json, tiles.png, background-wall.png", function() {
     Q.sheet("tiles", "tiles.png", {
       tilew: 32,
       tileh: 32
     });
-    Q.compileSheets("sprites.png", "sprites.json");
+    Q.compileSheets("player.png", "player.json");
+    Q.compileSheets("human.png", "human.json");
+    Q.animations("player", {
+      walk_right: {
+        frames: [0],
+        rate: 1 / 15,
+        flip: false,
+        loop: true
+      },
+      walk_left: {
+        frames: [0],
+        rate: 1 / 15,
+        flip: "x",
+        loop: true
+      }
+    });
+    Q.animations("human", {
+      walk_right: {
+        frames: [0],
+        rate: 1 / 15,
+        flip: false,
+        loop: true
+      },
+      walk_left: {
+        frames: [0],
+        rate: 1 / 15,
+        flip: "x",
+        loop: true
+      }
+    });
     return Q.stageScene("level1");
   });
 });
