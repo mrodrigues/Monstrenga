@@ -377,7 +377,7 @@ window.addEventListener "load", ->
   # Q.load can be called at any time to load additional assets
   # assets that are already loaded will be skipped
   # The callback will be triggered when everything is loaded
-  Q.load "player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png, jump.mp3, scream.mp3, die.mp3", ->
+  Q.load "player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png, jump.mp3, scream.mp3, die.mp3, bg.mp3", ->
 
     # Sprites sheets can be created manually
     Q.sheet "tiles", "tiles.png",
@@ -400,6 +400,7 @@ window.addEventListener "load", ->
 
     # Finally, call stageScene to run the game
     Q.stageScene "level1"
+    Q.audio.play("bg.mp3")
 
 # ## Possible Experimentations:
 # 

@@ -331,7 +331,7 @@ window.addEventListener("load", function() {
     });
     container.fit(20);
   });
-  return Q.load("player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png, jump.mp3, scream.mp3, die.mp3", function() {
+  return Q.load("player.png, player.json, human.png, human.json, trap.png, door.png, level.json, tiles.png, background-wall.png, jump.mp3, scream.mp3, die.mp3, bg.mp3", function() {
     Q.sheet("tiles", "tiles.png", {
       tilew: 32,
       tileh: 32
@@ -366,6 +366,7 @@ window.addEventListener("load", function() {
         loop: true
       }
     });
-    return Q.stageScene("level1");
+    Q.stageScene("level1");
+    return Q.audio.play("bg.mp3");
   });
 });
