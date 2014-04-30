@@ -6,7 +6,7 @@ window.addEventListener("load", function() {
     audioSupported: ['wav', 'mp3', 'ogg']
   }).include("Audio, Sprites, Scenes, Input, 2D, Anim, Touch, UI").setup({
     maximize: true
-  }).controls(true).touch().enableSound();
+  }).controls().touch().enableSound();
   Q.component("fearOfHeight", {
     added: function() {
       return this.entity.on("step", this, "step");

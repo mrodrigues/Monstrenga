@@ -19,7 +19,7 @@ window.addEventListener "load", ->
   Q = window.Q = Quintus({audioSupported: [ 'wav','mp3','ogg' ]}).
     include("Audio, Sprites, Scenes, Input, 2D, Anim, Touch, UI").
     setup(maximize: true).
-    controls(true).
+    controls().
     touch().
     enableSound()
 
