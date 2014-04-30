@@ -372,5 +372,14 @@ window.addEventListener("load", function() {
     return Q.audio.play("bg.mp3", {
       loop: true
     });
+  }, {
+    progressCallback: function(loaded, total) {
+      var element;
+      element = document.getElementById("loading_progress");
+      element.style.width = Math.floor(loaded / total * 100) + "%";
+      if (loaded === total) {
+        return document.getElementById("loading").style.display = "none";
+      }
+    }
   });
 });

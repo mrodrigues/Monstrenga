@@ -405,6 +405,11 @@ window.addEventListener "load", ->
     Q.stageScene "level1"
     Q.audio.play "bg.mp3", loop: true
 
+  , progressCallback: (loaded, total) ->
+      element = document.getElementById("loading_progress")
+      element.style.width = Math.floor(loaded/total*100) + "%"
+      if loaded == total
+        document.getElementById("loading").style.display = "none"
 # ## Possible Experimentations:
 # 
 # The are lots of things to try out here.
