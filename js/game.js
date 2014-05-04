@@ -234,8 +234,8 @@ window.addEventListener("load", function() {
     }));
     stage.add("viewport").follow(Q.player);
     window.enemy1 = new Q.Enemy({
-      x: 140,
-      y: 1297
+      x: 190,
+      y: 1361
     });
     stage.insert(enemy1);
     stage.insert(new Q.Enemy({

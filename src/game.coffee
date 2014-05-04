@@ -247,8 +247,8 @@ window.addEventListener "load", ->
     # Add in a couple of enemies
 
     window.enemy1 = new Q.Enemy(
-      x: 140
-      y: 1297
+      x: 190
+      y: 1361
     )
 
     stage.insert enemy1
